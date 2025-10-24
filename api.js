@@ -12,7 +12,7 @@ export default async function handler(req, res) {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "X-Shopify-Access-Token": process.env.SHOPIFY_ACCESS_TOKEN,
+          "X-Shopify-Access-Token": process.env.SHOPIFY_ADMIN_TOKEN,
         },
         body: JSON.stringify({
           draft_order: {
@@ -22,12 +22,12 @@ export default async function handler(req, res) {
               first_name: req.body.name,
               address1: req.body.address,
               phone: req.body.phone,
-              country: "TR"
+              country: "TR",
             },
             email: req.body.email,
-            tags: ["COD", "Kapıda Ödeme"]
-          }
-        })
+            tags: ["COD", "Kapıda Ödeme"],
+          },
+        }),
       }
     );
 
