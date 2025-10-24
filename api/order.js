@@ -7,7 +7,7 @@ export default async function handler(req, res) {
 
   try {
     const response = await fetch(
-      https://${process.env.SHOPIFY_STORE_DOMAIN}/admin/api/2025-01/draft_orders.json,
+      `https://${process.env.SHOPIFY_STORE_DOMAIN}/admin/api/2025-01/draft_orders.json`,
       {
         method: "POST",
         headers: {
