@@ -1,6 +1,16 @@
 import fetch from "node-fetch";
 
 export default async function handler(req, res) {
+  // ✅ CORS headers (Shopify dışından gelen isteklere izin ver)
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+
+  // ✅ Eğer OPTIONS isteği geldiyse 200 dön (tarayıcı preflight)
+  if (req.method === "OPTIONS") {
+    return res.status(200).end();
+  }
+
   // ✅ Yalnızca POST izinli
   if (req.method !== "POST") {
     console.log("⛔ Method not allowed:", req.method);
@@ -19,7 +29,7 @@ export default async function handler(req, res) {
       order: {
         line_items: [
           { variant_id: Number(variant_id), quantity: 1 },
-          { variant_id: 8075753029679, quantity: 1 } // Kapıda ödeme ücreti (90₺)
+          { variant_id: 8075753029679, quantity: 1 } // 90₺ kapıda ödeme ücreti
         ],
         email,
         phone,
