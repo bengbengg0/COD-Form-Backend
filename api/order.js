@@ -1,28 +1,28 @@
 import fetch from "node-fetch";
 
 export default async function handler(req, res) {
-  // Sadece POST isteklerine izin ver
+  // Sadece POST isteği kabul et
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
   }
 
   const { name, phone, address, email, variant_id } = req.body;
 
-  // Girdi kontrolü
+  // Zorunlu alan kontrolü
   if (!name || !phone || !address || !email || !variant_id) {
     return res.status(400).json({ error: "Eksik bilgi gönderildi." });
   }
 
   try {
-    // 🔍 Log: gelen body
+    // Log: gelen veriler
     console.log("📦 Gelen body:", req.body);
 
-    // Shopify sipariş verisi
+    // Shopify sipariş payload'u
     const orderData = {
       order: {
         line_items: [
           { variant_id: Number(variant_id), quantity: 1 },
-          { variant_id: 8075753029679, quantity: 1 } // 90₺ kapıda ödeme ücreti varyantı
+          { variant_id: 8075753029679, quantity: 1 } // Kapıda ödeme ücreti (90₺)
         ],
         email,
         phone,
@@ -44,12 +44,11 @@ export default async function handler(req, res) {
       }
     };
 
-    // 🔍 Log: gönderilen veri
     console.log("🚀 Shopify’a gönderilen sipariş:", JSON.stringify(orderData, null, 2));
 
-    // Shopify API isteği
+    // Shopify’a isteği gönder
     const shopifyResponse = await fetch(
-      https://${process.env.SHOPIFY_STORE_DOMAIN}/admin/api/2025-01/orders.json,
+      `https://${process.env.SHOPIFY_STORE_DOMAIN}/admin/api/2025-01/orders.json`,
       {
         method: "POST",
         headers: {
@@ -60,30 +59,27 @@ export default async function handler(req, res) {
       }
     );
 
-    const shopifyText = await shopifyResponse.text();
-
-    // 🔍 Log: Shopify yanıtı
+    const text = await shopifyResponse.text();
     console.log("🔙 Shopify status:", shopifyResponse.status);
-    console.log("🔙 Shopify response:", shopifyText);
+    console.log("🔙 Shopify response:", text);
 
-    // Yanıt JSON değilse hata döndürme
-    let shopifyData;
+    let data;
     try {
-      shopifyData = JSON.parse(shopifyText);
+      data = JSON.parse(text);
     } catch {
-      shopifyData = { raw: shopifyText };
+      data = { raw: text };
     }
 
     if (!shopifyResponse.ok) {
-      console.error("❌ Shopify API Hatası:", shopifyData);
+      console.error("❌ Shopify API hatası:", data);
       return res.status(shopifyResponse.status).json({
-        error: shopifyData,
+        error: data,
         message: "Shopify sipariş oluşturma başarısız."
       });
     }
 
-    console.log("✅ Shopify siparişi oluşturuldu:", shopifyData);
-    return res.status(200).json({ success: true, order: shopifyData });
+    console.log("✅ Shopify siparişi oluşturuldu:", data);
+    return res.status(200).json({ success: true, order: data });
   } catch (err) {
     console.error("❌ Sunucu hatası:", err);
     return res.status(500).json({ error: "Internal server error" });
