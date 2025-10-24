@@ -1,45 +1,44 @@
-import fetch from "node-fetch";
-
 export default async function handler(req, res) {
-  if (req.method !== "POST") {
-    return res.status(405).json({ error: "Method not allowed" });
+  // CORS ayarları (Shopify bağlantısı için şart)
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+  // Shopify preflight isteği için
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+
+  // Sadece POST isteklerini kabul et
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method not allowed' });
   }
 
   try {
-    const response = await fetch(
-      `https://${process.env.SHOPIFY_STORE_DOMAIN}/admin/api/2025-01/draft_orders.json`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "X-Shopify-Access-Token": process.env.SHOPIFY_ADMIN_TOKEN,
-        },
-        body: JSON.stringify({
-          draft_order: {
-            note: "Kapıda Ödeme Siparişi",
-            line_items: [
-              {
-                variant_id: req.body.variant_id,
-                quantity: 1,
-              },
-            ],
-            shipping_address: {
-              first_name: req.body.name,
-              address1: req.body.address,
-              phone: req.body.phone,
-              country: "TR",
-            },
-            email: req.body.email,
-            tags: ["COD", "Kapıda Ödeme"],
-          },
-        }),
-      }
-    );
+    // JSON body parse et
+    const { variant_id, name, phone, address, email } = req.body;
 
-    const data = await response.json();
-    res.status(200).json(data);
+    // Zorunlu alan kontrolü
+    if (!variant_id || !name || !phone || !address || !email) {
+      return res.status(400).json({ error: 'Eksik bilgi gönderildi.' });
+    }
+
+    console.log('✅ Yeni sipariş alındı:', { variant_id, name, phone, address, email });
+
+    // Burada senin backend sipariş işlemini veya e-posta bildirimi gibi bir işlem yapabilirsin.
+    // Şimdilik sadece başarı mesajı döndürür.
+
+    return res.status(200).json({
+      success: true,
+      message: 'Order received successfully',
+      received: { variant_id, name, phone, address, email }
+    });
+
   } catch (err) {
-    console.error("Shopify API Error:", err);
-    res.status(500).json({ error: "Shopify API error" });
+    console.error('❌ Hata:', err);
+    return res.status(500).json({
+      success: false,
+      error: 'Internal server error'
+    });
   }
 }
